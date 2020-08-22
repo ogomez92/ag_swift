@@ -3,7 +3,7 @@ import AVFoundation
 
 class SoundItem {
     var player: AVAudioPlayer
-	var pitchController: AVAudioUnitVarispeed
+
 	var file: AVAudioFile?
 	var volume: Float {
 		get {
@@ -14,7 +14,7 @@ class SoundItem {
 			self.player.volume = newValue
 		}
 	}	
-	var pitch: Float
+
 	var pan: Float {
 		get {
 			return self.player.pan
@@ -36,10 +36,10 @@ class SoundItem {
 	var filename: String
 	init!(_ fileName: String) {
 		self.filename = fileName
-		self.pitch=-1
+
 		do {
 			let fileURL = Bundle.main.url(forResource: filename, withExtension: "m4a")
-			self.player = try AVAudioPlayer(contentsOf: fileURL!)
+			self.player = try! AVAudioPlayer(contentsOf: fileURL!)
 			self.player.prepareToPlay()
 
 			print("sound created")
@@ -47,16 +47,21 @@ class SoundItem {
 			print("Error creating sound \(self.filename)")
 			return nil
 		}
-pitchController = AVAudioUnitVarispeed()
-		pitchController.rate = 1
 	}
 	func checkNext() {
 
 	}
 	func play() {
-		print("playing")
-		let result = self.player.play()
-		print(result)
+		self.player.play()
+	}
+	func stop() {
+		self.player.stop()
+	}
+	func pause() {
+		self.player.pause()
+	}
+	func fade() {
+		self.player.setVolume(0.0, fadeDuration: 1.5)
 	}
 	deinit {
 	}
