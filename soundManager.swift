@@ -36,17 +36,9 @@ class SoundItem {
 	var filename: String
 	init!(_ fileName: String) {
 		self.filename = fileName
-
-		do {
 			let fileURL = Bundle.main.url(forResource: filename, withExtension: "m4a")
 			self.player = try! AVAudioPlayer(contentsOf: fileURL!)
 			self.player.prepareToPlay()
-
-			print("sound created")
-		} catch {
-			print("Error creating sound \(self.filename)")
-			return nil
-		}
 	}
 	func checkNext() {
 
@@ -56,6 +48,11 @@ class SoundItem {
 	}
 	func stop() {
 		self.player.stop()
+	}
+	func replay() {
+		self.player.stop()
+		self.player.currentTime = 0
+		self.player.play()
 	}
 	func pause() {
 		self.player.pause()
