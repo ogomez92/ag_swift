@@ -20,7 +20,7 @@ class HapticsManager {
 		let intensity = CHHapticEventParameter(parameterID: .hapticIntensity, value: 1)
 		let sharpness = CHHapticEventParameter(parameterID: .hapticSharpness, value: 1)
 		var time: Float = 0
-		for i in stride(from: 1, to: 10, by: 1) {
+		for _ in stride(from: 1, to: 10, by: 1) {
 			time+=0.02;
 			let event = CHHapticEvent(eventType: .hapticTransient, parameters: [intensity, sharpness], relativeTime: TimeInterval(time))
 			events.append(event)
