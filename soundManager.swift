@@ -40,6 +40,9 @@ class SoundItem {
 			self.player = try! AVAudioPlayer(contentsOf: fileURL!)
 			self.player.prepareToPlay()
 	}
+	deinit {
+		tts.speakVo("dead sound")
+	}
 	func checkNext() {
 
 	}
@@ -59,8 +62,6 @@ class SoundItem {
 	}
 	func fade() {
 		self.player.setVolume(0.0, fadeDuration: 1.5)
-	}
-	deinit {
 	}
 }
 

@@ -1,11 +1,17 @@
 import Foundation
 import AVFoundation
-class SoundItem {
+class EngineItem {
+	var engine: SoundEngine
+	var isPlaying: Bool {
+		get {
+			return self.player.isPlaying
+		}
+	}
     var player: AVAudioPlayerNode
 	var pitchController: AVAudioUnitVarispeed
 	var file: AVAudioFile?
-	var mixer: AVAudioMixerNode
-
+	//var mixer: AVAudioMixerNode
+	var looping: Bool=false
 	var pitch: Float {
 		get {
 			return self.pitchController.rate
@@ -33,13 +39,26 @@ class SoundItem {
 			self.player.pan = newValue
 		}
 	}
-	var loop = false
+	var loop: Bool {
+		set {
+			if newValue {
+				self.looping=true
+			}
+			else {
+				self.looping=false
+			}
+		}
+		get {
+			return self.looping
+		}
+	}
 	var filename: String
 
 
-	init!(_ fileName: String) {
+	init!(_ fileName: String, _ engine: SoundEngine) {
+		self.engine=engine
 		self.filename = fileName
-		self.mixer = AVAudioMixerNode()
+		//self.mixer = AVAudioMixerNode()
 		do {
 			let fileURL = Bundle.main.url(forResource: self.filename, withExtension: "m4a")
 			self.file = try AVAudioFile(forReading: fileURL!)
@@ -51,28 +70,34 @@ class SoundItem {
 		}
 			self.pitchController = AVAudioUnitVarispeed()
 		}
-
+	func stop() {
+		self.player.stop()
+	}
 	func checkNext() {
-		if (self.loop) {
-			do {
-				try self.player.scheduleFile(self.file!, at: nil) {
+		if (self.looping) {
+				self.player.scheduleFile(self.file!, at: nil) {
 					self.checkNext()
-				}
-			} catch {
-print("error when scheduling loop")
-			}
+}
 		}
 	}
 	func play() {
-		print("playing")
+		self.player.scheduleFile(self.file!, at: nil) {
+			self.checkNext()
+		}
 		self.player.play()
 	}
+	func destroy() {
+
+		self.engine.engine.detach(player)
+		self.engine.engine.detach(pitchController)
+	}
 	deinit {
+		tts.speakVo("dead")
 	}
 }
 
-class SoundManager {
-	var sounds: [SoundItem] = []
+class SoundEngine {
+	var sounds: [EngineItem] = []
 	var engine: AVAudioEngine
 	init() {
 		self.engine = AVAudioEngine()
@@ -86,39 +111,35 @@ print("can't setup audio session.")
 
 	}
 
-func connectNodes(_ sound: SoundItem) {
+func connectNodes(_ sound: EngineItem) {
 	DispatchQueue.global(qos: .background).sync {
 	do {
 		self.engine.attach(sound.player)
-		self.engine.attach(sound.mixer)
 		self.engine.attach(sound.pitchController)
-		self.engine.connect(sound.mixer, to: self.engine.mainMixerNode, format: nil)
-		self.engine.connect(sound.player, to: sound.mixer, format: nil)
+		print("attached")
 		self.engine.connect(sound.player, to: sound.pitchController, format: nil)
-		self.engine.connect(sound.pitchController, to: sound.mixer, format: nil)
+//		self.engine.connect(sound.player, to: self.engine.mainMixerNode, format: nil)
+		self.engine.connect(sound.pitchController, to: self.engine.mainMixerNode, format: nil)
+		print("all nodes connected.")
 		if (!self.engine.isRunning) {
+			print("not running")
 			try self.engine.start()
 		}
-		try sound.player.scheduleFile(sound.file!, at: nil) {
-			sound.checkNext()
-		}
+		print("scheduling file")
+		//sound.player.scheduleFile(sound.file!, at: nil) {
+		//}
 		print("nodes connected")
 	} catch {
 print("Error connecting nodes")
 }
 	}
 }
-	func create(_ filename: String) -> SoundItem? {
-		do {
-var newSound = try SoundItem(filename)
+	func create(_ filename: String) -> EngineItem? {
+let newSound = EngineItem(filename,self)
 			print("connecting")
-			try self.connectNodes(newSound!)
+			self.connectNodes(newSound!)
 			print("connected")
 			return newSound
-		} catch {
-	print("Cannot create sound item in sound manager for \(filename)")
-	return nil
-}
 
 	}
 }
