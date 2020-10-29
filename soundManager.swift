@@ -14,7 +14,11 @@ class SoundItem {
 			self.player.volume = newValue
 		}
 	}	
-
+	var duration: Int {
+		get {
+			return Int(self.player.duration*1000)
+		}
+	}
 	var pan: Float {
 		get {
 			return self.player.pan
@@ -35,16 +39,26 @@ class SoundItem {
 	}
 	var filename: String
 	init!(_ fileName: String) {
+		do {
+
 		self.filename = fileName
+			print(self.filename)
 			let fileURL = Bundle.main.url(forResource: filename, withExtension: "m4a")
+//			print("loaded file for "+self.filename)
 			self.player = try! AVAudioPlayer(contentsOf: fileURL!)
 			self.player.prepareToPlay()
-	}
-	deinit {
-		tts.speakVo("dead sound")
+		} catch {
+//			print("error loading sound "+self.filename)
+		}
 	}
 	func checkNext() {
 
+	}
+	func playAnd(_ what: @escaping() -> Void) {
+		self.player.play()
+		doAfter(Int(self.duration)) {
+what()
+		}
 	}
 	func play() {
 		self.player.play()
@@ -66,6 +80,7 @@ class SoundItem {
 }
 
 class SoundManager {
+	var oneShot: SoundItem?
 	var sounds: [SoundItem] = []
 	func create(_ filename: String) -> SoundItem? {
 		if let snd = SoundItem(filename) {
@@ -74,6 +89,14 @@ return snd
 			print("Cannot create sound item in sound manager for \(filename)")
 		}
 		return nil
+	}
+	func playOnce(_ file: String) -> Int {
+oneShot=create(file)
+		oneShot?.play()
+		doAfter(oneShot!.duration*2) {
+			self.oneShot=nil
+		}
+		return oneShot!.duration
 	}
 }
 
