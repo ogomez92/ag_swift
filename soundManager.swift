@@ -1,102 +1,123 @@
-import Foundation
 import AVFoundation
+import Foundation
 
 class SoundItem {
+    var soundID: String
     var player: AVAudioPlayer
 
-	var file: AVAudioFile?
-	var volume: Float {
-		get {
-			return self.player.volume
+    var file: AVAudioFile?
+    var volume: Float {
+        get {
+            player.volume
+        }
+        set {
+            player.volume = newValue
+        }
+    }
 
-		}
-		set {
-			self.player.volume = newValue
-		}
-	}	
-	var duration: Int {
-		get {
-			return Int(self.player.duration*1000)
-		}
-	}
-	var pan: Float {
-		get {
-			return self.player.pan
+    var duration: Int {
+        Int(player.duration * 1000)
+    }
 
-		}
-		set {
-			self.player.pan = newValue
-		}
-	}
-	var loop: Bool {
-		get {
-			self.player.numberOfLoops == 0 ? false : true
-		}
-		set {
-			if !newValue { self.player.numberOfLoops = 0 }
-			if newValue { self.player.numberOfLoops = -1 }
-		}
-	}
-	var filename: String
-	init!(_ fileName: String) {
-		do {
+    var pan: Float {
+        get {
+            player.pan
+        }
+        set {
+            player.pan = newValue
+        }
+    }
 
-		self.filename = fileName
-			print(self.filename)
-			let fileURL = Bundle.main.url(forResource: filename, withExtension: "m4a")
-//			print("loaded file for "+self.filename)
-			self.player = try! AVAudioPlayer(contentsOf: fileURL!)
-			self.player.prepareToPlay()
-		} catch {
-//			print("error loading sound "+self.filename)
-		}
-	}
-	func checkNext() {
+    var loop: Bool {
+        get {
+            player.numberOfLoops == 0 ? false : true
+        }
+        set {
+            if !newValue { player.numberOfLoops = 0 }
+            if newValue { player.numberOfLoops = -1 }
+        }
+    }
 
-	}
-	func playAnd(_ what: @escaping() -> Void) {
-		self.player.play()
-		doAfter(Int(self.duration)) {
-what()
-		}
-	}
-	func play() {
-		self.player.play()
-	}
-	func stop() {
-		self.player.stop()
-	}
-	func replay() {
-		self.player.stop()
-		self.player.currentTime = 0
-		self.player.play()
-	}
-	func pause() {
-		self.player.pause()
-	}
-	func fade() {
-		self.player.setVolume(0.0, fadeDuration: 1.5)
-	}
+    var filename: String
+    init!(_ fileName: String) {
+        filename = fileName
+        soundID = UUID().uuidString
+        //			print(self.filename)
+        let fileURL = Bundle.main.url(forResource: filename, withExtension: "m4a")
+        // print("loaded file for "+self.filename)
+        player = try! AVAudioPlayer(contentsOf: fileURL!)
+        player.prepareToPlay()
+    }
+
+    func checkNext() {}
+
+    func playAnd(_ what: @escaping () -> Void) {
+        player.play()
+        doAfter(Int(duration)) {
+            what()
+        }
+    }
+
+    func fadeIn(_: Int) {}
+
+    func play() {
+        player.play()
+    }
+
+    func stop() {
+        player.stop()
+    }
+
+    func replay() {
+        player.stop()
+        player.currentTime = 0
+        player.play()
+    }
+
+    func pause() {
+        player.pause()
+    }
+
+    func fade() {
+        player.setVolume(0.0, fadeDuration: 1.5)
+    }
 }
 
 class SoundManager {
-	var oneShot: SoundItem?
-	var sounds: [SoundItem] = []
-	func create(_ filename: String) -> SoundItem? {
-		if let snd = SoundItem(filename) {
-return snd
-		} else {
-			print("Cannot create sound item in sound manager for \(filename)")
-		}
-		return nil
-	}
-	func playOnce(_ file: String) -> Int {
-oneShot=create(file)
-		oneShot?.play()
-		doAfter(oneShot!.duration*2) {
-			self.oneShot=nil
-		}
-		return oneShot!.duration
-	}
-}
+    var oneShotSounds: [SoundItem]
+    var sounds: [SoundItem] = []
+    init() {
+        oneShotSounds = []
+    }
 
+    func create(_ filename: String) -> SoundItem? {
+        if let snd = SoundItem(filename) {
+            return snd
+        } else {
+            print("Cannot create sound item in sound manager for \(filename)")
+        }
+        return nil
+    }
+
+    func playOnce(_ file: String) -> Int {
+        let newSound = create(file)
+
+        oneShotSounds.append(newSound!)
+        newSound?.play()
+
+        doAfter(newSound!.duration * 2) {
+            self.removeOneShot(newSound!.soundID)
+        }
+        return newSound!.duration
+    }
+
+    func removeOneShot(_ id: String) {
+        for index in 0 ..< oneShotSounds.count {
+            if oneShotSounds[index].soundID == id {
+                print("removing \(index), have \(oneShotSounds.count) items")
+                oneShotSounds.remove(at: index)
+                break
+            }
+        }
+    }
+}
